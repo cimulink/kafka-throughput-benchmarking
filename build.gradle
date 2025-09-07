@@ -1,0 +1,59 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'com.example'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Kafka Clients
+    implementation 'org.apache.kafka:kafka-clients:3.6.0'
+    
+    // Command line parsing
+    implementation 'info.picocli:picocli:4.7.5'
+    
+    // High Dynamic Range (HDR) Histogram
+    implementation 'org.hdrhistogram:HdrHistogram:2.1.12'
+    
+    // CSV handling
+    implementation 'com.opencsv:opencsv:5.7.1'
+    
+    // Logging
+    implementation 'org.slf4j:slf4j-api:2.0.9'
+    implementation 'ch.qos.logback:logback-classic:1.4.11'
+    
+    // JUnit for testing
+    testImplementation 'junit:junit:4.13.2'
+}
+
+application {
+    mainClass = 'com.example.kafkabenchmark.BenchmarkApplication'
+}
+
+jar {
+    manifest {
+        attributes(
+            'Main-Class': 'com.example.kafkabenchmark.BenchmarkApplication'
+        )
+    }
+    
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+// Task to download all dependencies
+task downloadDependencies {
+    description = 'Download all dependencies'
+    doLast {
+        configurations.compileClasspath.files
+        configurations.runtimeClasspath.files
+    }
+}

@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  # Kafka with JMX enabled
+  kafka:
+    image: apache/kafka:4.1.0
+    ports:
+      - "9092:9092"
+      - "10129:10129"
+    environment:
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_NODE_ID: 1
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_JMX_PORT: 10129
+      KAFKA_JMX_HOSTNAME: 0.0.0.0
+      KAFKA_OPTS: "-Dcom.sun.management.jmxremote=true -Dcom.sun.management.jmxremote.port=10129 -Dcom.sun.management.jmxremote.local.only=false -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=0.0.0.0"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  # # JMX Exporter to convert JMX metrics to Prometheus format
+  # jmx-exporter:
+  #   image: bitnami/jmx-exporter:0.17.0
+  #   ports:
+  #     - "5556:5556"
+  #   environment:
+  #     - JAVA_OPTS=-Djavax.net.ssl.trustStore=/opt/bitnami/jmx-exporter/cacerts
+  #   volumes:
+  #     - ./jmx-exporter-config-custom.yml:/opt/bitnami/jmx-exporter/conf/config.yml:ro
+  #   command: ["0.0.0.0:5556", "/opt/bitnami/jmx-exporter/conf/config.yml"]
+  #   depends_on:
+  #     - kafka
+
+  # Prometheus to scrape metrics
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - jmx-exporter
+
+  # Grafana for visualization
+  grafana:
+    image: grafana/grafana-enterprise:10.2.0
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+volumes:
+  grafana-storage:

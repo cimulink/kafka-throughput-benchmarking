@@ -1,0 +1,34 @@
+---
+startDelaySeconds: 30
+hostPort: kafka:10129
+username:
+password:
+
+rules:
+  - pattern: kafka.server<type=BrokerTopicMetrics, name=(.+)><>OneMinuteRate
+    name: kafka_server_BrokerTopicMetrics_OneMinuteRate
+    labels:
+      name: $1
+      
+  - pattern: kafka.server<type=BrokerTopicMetrics, name=(.+)><>Count
+    name: kafka_server_BrokerTopicMetrics_Count
+    labels:
+      name: $1
+      
+  - pattern: kafka.server<type=KafkaRequestHandlerPool, name=RequestHandlerAvgIdlePercent><>MeanRate
+    name: kafka_server_KafkaRequestHandlerPool_RequestHandlerAvgIdlePercent
+      
+  - pattern: kafka.server<type=ReplicaManager, name=(.+)><>(Value|Count)
+    name: kafka_server_ReplicaManager
+    labels:
+      name: $1
+      
+  - pattern: kafka.controller<type=KafkaController, name=(.+)><>Value
+    name: kafka_controller_KafkaController_Value
+    labels:
+      name: $1
+      
+  - pattern: kafka.server<type=BrokerTopicMetrics, name=(.+)><>(OneMinuteRate|FiveMinuteRate|FifteenMinuteRate)
+    name: kafka_server_BrokerTopicMetrics_Rate
+    labels:
+      name: $1
